@@ -1,4 +1,4 @@
-name: Build PvPCompetition
+name: Build PvPCompetition (Auto Detect)
 
 on:
   push:
@@ -18,15 +18,43 @@ jobs:
         with:
           distribution: temurin
           java-version: '8'
-          cache: maven
+
+      - name: Locate pom.xml or unzip source
+        id: findpom
+        shell: bash
+        run: |
+          set -e
+          shopt -s globstar nullglob
+          POMS=(**/pom.xml)
+          if [[ ${#POMS[@]} -eq 0 ]]; then
+            echo "No pom.xml found. Trying to unzip *-src.zip ..."
+            ZIP=$(ls -1 *.zip 2>/dev/null | head -n1 || true)
+            if [[ -n "$ZIP" ]]; then
+              echo "Unzipping $ZIP"
+              mkdir -p project
+              unzip -q "$ZIP" -d project
+              # try again inside project
+              shopt -s globstar nullglob
+              POMS=(project/**/pom.xml)
+            fi
+          fi
+          if [[ ${#POMS[@]} -eq 0 ]]; then
+            echo "Error: No pom.xml was found in the repository or unzipped content."
+            exit 1
+          fi
+          POM="${POMS[0]}"
+          echo "Found POM at: $POM"
+          echo "pom=$POM" >> $GITHUB_OUTPUT
+          echo "pomdir=$(dirname "$POM")" >> $GITHUB_OUTPUT
 
       - name: Build with Maven
-        run: mvn -B -DskipTests package
+        shell: bash
+        run: |
+          mvn -f "${{ steps.findpom.outputs.pom }}" -B -DskipTests package
 
       - name: Upload plugin artifact
         uses: actions/upload-artifact@v4
         with:
           name: PvPCompetition-${{ github.run_number }}
-          path: |
-            target/*.jar
+          path: ${{ steps.findpom.outputs.pomdir }}/target/*.jar
           if-no-files-found: error
