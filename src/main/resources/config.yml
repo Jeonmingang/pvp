@@ -1,0 +1,39 @@
+# 기본 설정
+rating:
+  start: 1000
+  kFactorBase: 32
+  kFactorSoloBonus: 4
+  kFactorUnderdogBonus: 8
+  mismatchWaitSeconds: 45 # 이 시간 이상 대기하면 1v2 허용
+
+queue:
+  searchIntervalTicks: 60
+
+match:
+  allowCommandsWhileInMatch: false
+  blockedCommands:
+    - "/fly"
+  restoreFlightAfterMatch: true
+  disableFriendlyFire: true
+  graceSecondsOnStart: 3
+
+weeklyReset:
+  enabled: true
+  resetDayOfWeek: 1   # 1=월요일 (java.util.Calendar 기준)
+  resetHour: 0
+  resetMinute: 0
+  distributeRewardsOnLogin: true
+
+tiers:
+  - name: BRONZE
+    min: 0
+  - name: SILVER
+    min: 900
+  - name: GOLD
+    min: 1100
+  - name: PLATINUM
+    min: 1300
+  - name: DIAMOND
+    min: 1500
+  - name: MASTER
+    min: 1700
