@@ -41,6 +41,7 @@ public class Main extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new DamageListener(matchManager), this);
         Bukkit.getPluginManager().registerEvents(new DeathQuitListener(matchManager), this);
         Bukkit.getPluginManager().registerEvents(new CommandBlockListener(matchManager, this), this);
+        Bukkit.getPluginManager().registerEvents(new com.minkang.ultimate.pvpmm.listeners.MoveListener(matchManager), this);
 
         matchmaker.start();
         // periodic autosave for arenas (once per minute)
