@@ -45,6 +45,7 @@ public class Main extends JavaPlugin {
         matchmaker.start();
         // periodic autosave for arenas (once per minute)
         org.bukkit.Bukkit.getScheduler().runTaskTimer(this, () -> arenaManager.save(), 20L*60, 20L*60);
+        org.bukkit.Bukkit.getScheduler().runTaskTimer(this, () -> matchManager.save(), 20L*60, 20L*60);
         matchManager.startWeeklyResetTask();
         getLogger().info("PvPCompetition enabled v1.0.13");
     }
@@ -54,6 +55,7 @@ public class Main extends JavaPlugin {
         if (matchmaker!=null) matchmaker.stop();
         if (matchManager!=null) matchManager.shutdownAllMatches();
         arenaManager.save();
+        if (matchManager!=null) matchManager.save();
         rewardManager.save();
     }
 }
