@@ -27,6 +27,7 @@ public class Main extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+        getDataFolder().mkdirs();
         saveDefaultConfig();
         this.arenaManager = new ArenaManager(this);
         this.rewardManager = new RewardManager(this);
@@ -42,6 +43,8 @@ public class Main extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new CommandBlockListener(matchManager, this), this);
 
         matchmaker.start();
+        // periodic autosave for arenas (once per minute)
+        org.bukkit.Bukkit.getScheduler().runTaskTimer(this, () -> arenaManager.save(), 20L*60, 20L*60);
         matchManager.startWeeklyResetTask();
         getLogger().info("PvPCompetition enabled v1.0.13");
     }

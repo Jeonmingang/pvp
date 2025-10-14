@@ -40,7 +40,7 @@ public class MatchManager {
         m.setState(Match.State.PREP); m.setStartMillis(System.currentTimeMillis());
         Bukkit.broadcastMessage("§d[경쟁전] §f매치 매칭! §b"+arena.getName()+" §7- §a"+formatTeamWithTier(teamA)+" §7vs §c"+formatTeamWithTier(teamB));
         sendTitleToMatch(m,"§d경쟁전 매치","§7잠시 후 시작합니다",5,30,5);
-        new BukkitRunnable(){ int n=3; @Override public void run(){ if(n==0){ sendTitleToMatch(m,"§aSTART!","",0,20,10); m.setState(Match.State.RUNNING); cancel(); return; } sendTitleToMatch(m,"§e"+n,"§7곧 시작",0,20,0); n--; } }.runTaskTimer(plugin,20L,20L);
+        new BukkitRunnable(){ int n=3; @Override public void run(){ if(n==0){ sendTitleToMatch(m,"§aSTART!","",0,20,10); sendTitleToMatch(m,"§a시작!","",0,20,10); m.setState(Match.State.RUNNING); cancel(); return; } sendTitleToMatch(m,"§e"+n,"§7곧 시작",0,20,0); n--; } }.runTaskTimer(plugin,20L,20L);
     }
     private void snapshotPlayer(java.util.UUID id, Match m){ Player p=Bukkit.getPlayer(id); if(p==null) return; m.getReturnLocations().put(id, p.getLocation().clone()); m.getHadFlight().put(id, p.getAllowFlight()); }
     private void teleportTeam(Set<java.util.UUID> team, Location p1, Location p2){ int i=0; for(java.util.UUID u: team){ Player p=Bukkit.getPlayer(u); if(p!=null) p.teleport((i++==0)?p1:p2); } }
@@ -87,7 +87,7 @@ public class MatchManager {
 
         StringBuilder sbTeamA=new StringBuilder(); for(java.util.UUID u:m.getTeamA()){ org.bukkit.OfflinePlayer op=Bukkit.getOfflinePlayer(u); sbTeamA.append(" ").append(op!=null?op.getName():"Unknown").append("§7(").append(getRating(u)).append(")"); }
         StringBuilder sbTeamB=new StringBuilder(); for(java.util.UUID u:m.getTeamB()){ org.bukkit.OfflinePlayer op=Bukkit.getOfflinePlayer(u); sbTeamB.append(" ").append(op!=null?op.getName():"Unknown").append("§7(").append(getRating(u)).append(")"); }
-        Bukkit.broadcastMessage("§d[경쟁전] §f레이팅 변동§7 - §aA:"+sbTeamA.toString()+" §7| §cB:"+sbTeamB.toString());
+        Bukkit.broadcastMessage("§d[경쟁전] §f레이팅 변동§7 - §aA(" + (dA>=0? "+"+dA : String.valueOf(dA)) + "):" + sbTeamA.toString() + " §7| §cB(" + (dB>=0? "+"+dB : String.valueOf(dB)) + "):" + sbTeamB.toString());
 
         cleanupScoreboard(m);
         forceUnmapAll(m);
