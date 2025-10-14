@@ -47,6 +47,8 @@ public class Main extends JavaPlugin {
         // periodic autosave for arenas (once per minute)
         org.bukkit.Bukkit.getScheduler().runTaskTimer(this, () -> arenaManager.save(), 20L*60, 20L*60);
         org.bukkit.Bukkit.getScheduler().runTaskTimer(this, () -> matchManager.save(), 20L*60, 20L*60);
+        // Ensure arenas load after all worlds are ready
+        org.bukkit.Bukkit.getScheduler().runTaskLater(this, () -> arenaManager.load(), 40L);
         matchManager.startWeeklyResetTask();
         getLogger().info("PvPCompetition enabled v1.0.13");
     }

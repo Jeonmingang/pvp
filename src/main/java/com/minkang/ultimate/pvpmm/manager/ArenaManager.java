@@ -27,13 +27,35 @@ public class ArenaManager {
     }
     public void save(){
         cfg.set("arenas", null);
+        // Merge-protect: load existing file to preserve positions when current in-memory pos is null
+        org.bukkit.configuration.file.FileConfiguration _existing = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(file);
         for(Arena a: arenas.values()){
             String base="arenas."+a.getName();
             cfg.set(base+".world", a.getWorldName());
+            if ((a.getPos(1)) != null) {
             cfg.set(base+".pos1", LocationUtil.serialize(a.getPos(1)));
+        } else {
+            Object _keep = _existing.get(base+".pos1");
+            if (_keep != null) cfg.set(base+".pos1", _keep);
+        }
+            if ((a.getPos(2)) != null) {
             cfg.set(base+".pos2", LocationUtil.serialize(a.getPos(2)));
+        } else {
+            Object _keep = _existing.get(base+".pos2");
+            if (_keep != null) cfg.set(base+".pos2", _keep);
+        }
+            if ((a.getPos(3)) != null) {
             cfg.set(base+".pos3", LocationUtil.serialize(a.getPos(3)));
+        } else {
+            Object _keep = _existing.get(base+".pos3");
+            if (_keep != null) cfg.set(base+".pos3", _keep);
+        }
+            if ((a.getPos(4)) != null) {
             cfg.set(base+".pos4", LocationUtil.serialize(a.getPos(4)));
+        } else {
+            Object _keep = _existing.get(base+".pos4");
+            if (_keep != null) cfg.set(base+".pos4", _keep);
+        }
         }
         try{ cfg.save(file); }catch(IOException e){ e.printStackTrace(); }
     }
