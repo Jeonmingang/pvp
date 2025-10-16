@@ -82,19 +82,28 @@ public class MatchManager {
         m.setState(Match.State.PREP); m.setStartMillis(System.currentTimeMillis());
         Bukkit.broadcastMessage("§d[경쟁전] §f매치 매칭! §b"+arena.getName()+" §7- §a"+formatTeamWithTier(teamA)+" §7vs §c"+formatTeamWithTier(teamB));
         sendTitleToMatch(m,"§d경쟁전 매치","§7잠시 후 시작합니다",5,30,5);
+
 new org.bukkit.scheduler.BukkitRunnable() {
     int n = 3;
     @Override public void run() {
         if (n <= 0) {
-            sendTitleToMatch(m, "§a시작!", "", 0, 20, 10);
+            sendTitleToMatch(m, "§a시작!", "§7행운을 빕니다", 5, 30, 5);
+            sendActionBarToMatch(m, "§a시작!");
+            for(java.util.UUID u : m.getTeamA()){ org.bukkit.entity.Player p=org.bukkit.Bukkit.getPlayer(u); if(p!=null) p.playSound(p.getLocation(), org.bukkit.Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f); }
+            for(java.util.UUID u : m.getTeamB()){ org.bukkit.entity.Player p=org.bukkit.Bukkit.getPlayer(u); if(p!=null) p.playSound(p.getLocation(), org.bukkit.Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f); }
             m.setState(com.minkang.ultimate.pvpmm.model.Match.State.RUNNING);
+            new org.bukkit.scheduler.BukkitRunnable(){ @Override public void run(){ m.setState(com.minkang.ultimate.pvpmm.model.Match.State.RUNNING); } }.runTaskLater(plugin, 1L);
             cancel();
             return;
         }
-        sendTitleToMatch(m, "§e" + n, "§7곧 시작", 0, 20, 0);
+        sendTitleToMatch(m, "§e" + n, "§7곧 시작", 5, 20, 5);
+        sendActionBarToMatch(m, "§e" + n + "§7...");
+        for(java.util.UUID u : m.getTeamA()){ org.bukkit.entity.Player p=org.bukkit.Bukkit.getPlayer(u); if(p!=null) p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_HAT, 1.0f, 1.7f); }
+        for(java.util.UUID u : m.getTeamB()){ org.bukkit.entity.Player p=org.bukkit.Bukkit.getPlayer(u); if(p!=null) p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_HAT, 1.0f, 1.7f); }
         n--;
     }
 }.runTaskTimer(plugin, 20L, 20L);
+
 
         new BukkitRunnable(){ int n=3; @Override public void run(){ if(n==0){ sendTitleToMatch(m,"§aSTART!","",0,20,10); sendTitleToMatch(m,"§a시작!","",0,20,10); m.setState(Match.State.RUNNING); cancel(); return; } sendTitleToMatch(m,"§e"+n,"§7곧 시작",0,20,0); n--; } }.runTaskTimer(plugin,20L,20L);
     }
@@ -172,16 +181,37 @@ new org.bukkit.scheduler.BukkitRunnable() {
     private String formatTeam(Set<java.util.UUID> t){ StringBuilder sb=new StringBuilder(); boolean first=true; for(java.util.UUID u:t){ Player p=Bukkit.getPlayer(u); String n=(p==null?"오프라인":p.getName()); if(!first) sb.append(" & "); sb.append(n); first=false; } return sb.toString(); }
     private String formatTeamWithTier(Set<java.util.UUID> t){ StringBuilder sb=new StringBuilder(); boolean first=true; for(java.util.UUID u:t){ Player p=Bukkit.getPlayer(u); String n=(p==null?"오프라인":p.getName()); int r=getRating(u); String tier=getTierName(r); if(!first) sb.append(" & "); sb.append(n).append("§7(").append(tier).append("§7)"); first=false; } return sb.toString(); }
     private void sendTitleToMatch(Match m, String title, String sub, int fi, int st, int fo){ for(java.util.UUID u:m.getTeamA()){ Player p=Bukkit.getPlayer(u); if(p!=null) p.sendTitle(title, sub, fi, st, fo);} for(java.util.UUID u:m.getTeamB()){ Player p=Bukkit.getPlayer(u); if(p!=null) p.sendTitle(title, sub, fi, st, fo);} }
-    private void toggleFly(java.util.Set<java.util.UUID> team, boolean allow, Match m){ for(java.util.UUID u:team){ Player p=Bukkit.getPlayer(u); if(p==null) continue; if(!allow){ if(p.isFlying()) p.setFlying(false); p.setAllowFlight(false);} else { Boolean had=m.getHadFlight().get(u); if(had!=null) p.setAllowFlight(had); } } }
-    public void playerDiedOrQuit(java.util.UUID id){
-        Match m=getMatch(id); if(m==null) return;
-        boolean wasA=m.getTeamA().remove(id); if(!wasA) m.getTeamB().remove(id);
-        playerToMatch.remove(id);
-        new BukkitRunnable(){ @Override public void run(){ restorePlayer(id, m); } }.runTaskLater(plugin, 20L);
-        if(m.getTeamA().isEmpty() && m.getTeamB().isEmpty()) { endMatch(m, true); return; }
-        if(m.getTeamA().isEmpty()) { endMatch(m, false); return; }
-        if(m.getTeamB().isEmpty()) { endMatch(m, true); return; }
+
+private void sendActionBarToMatch(Match m, String msg){
+    for(java.util.UUID u : m.getTeamA()){
+        org.bukkit.entity.Player p = org.bukkit.Bukkit.getPlayer(u);
+        if(p!=null) p.spigot().sendMessage(net.md_5.bungee.api.ChatMessageType.ACTION_BAR, new net.md_5.bungee.api.chat.TextComponent(msg));
     }
+    for(java.util.UUID u : m.getTeamB()){
+        org.bukkit.entity.Player p = org.bukkit.Bukkit.getPlayer(u);
+        if(p!=null) p.spigot().sendMessage(net.md_5.bungee.api.ChatMessageType.ACTION_BAR, new net.md_5.bungee.api.chat.TextComponent(msg));
+    }
+}
+
+    private void toggleFly(java.util.Set<java.util.UUID> team, boolean allow, Match m){ for(java.util.UUID u:team){ Player p=Bukkit.getPlayer(u); if(p==null) continue; if(!allow){ if(p.isFlying()) p.setFlying(false); p.setAllowFlight(false);} else { Boolean had=m.getHadFlight().get(u); if(had!=null) p.setAllowFlight(had); } } }
+    
+public void playerDiedOrQuit(java.util.UUID id){
+    Match m=getMatch(id); if(m==null) return;
+    boolean inA = m.getTeamA().contains(id);
+    boolean inB = m.getTeamB().contains(id);
+    if(inA && m.getTeamA().size() <= 1){
+        endMatch(m, false);
+        return;
+    }
+    if(inB && m.getTeamB().size() <= 1){
+        endMatch(m, true);
+        return;
+    }
+    if(inA) m.getTeamA().remove(id); else if(inB) m.getTeamB().remove(id);
+    playerToMatch.remove(id);
+    new BukkitRunnable(){ @Override public void run(){ restorePlayer(id, m); } }.runTaskLater(plugin, 20L);
+}
+
     public void shutdownAllMatches(){ for(Match m: new java.util.ArrayList<Match>(active.values())) endMatch(m, true); }
     public void startWeeklyResetTask(){ if(!Main.get().getConfig().getBoolean("weeklyReset.enabled", true)) return; new BukkitRunnable(){ @Override public void run(){ java.util.Calendar c=java.util.Calendar.getInstance(); int dow=Main.get().getConfig().getInt("weeklyReset.resetDayOfWeek",1); int h=Main.get().getConfig().getInt("weeklyReset.resetHour",0); int m=Main.get().getConfig().getInt("weeklyReset.resetMinute",0); if(c.get(java.util.Calendar.DAY_OF_WEEK)==dow && c.get(java.util.Calendar.HOUR_OF_DAY)==h && c.get(java.util.Calendar.MINUTE)==m) performWeeklyReset(); } }.runTaskTimer(plugin, 20L*60, 20L*60); }
     private void performWeeklyReset(){ org.bukkit.Bukkit.broadcastMessage("§6[경쟁전] §f주간 시즌 종료! 등급 보상을 지급합니다."); for(java.util.UUID u: new java.util.HashSet<java.util.UUID>(rating.keySet())){ rating.put(u, Main.get().getConfig().getInt("rating.start",1000)); wins.put(u,0); losses.put(u,0);
