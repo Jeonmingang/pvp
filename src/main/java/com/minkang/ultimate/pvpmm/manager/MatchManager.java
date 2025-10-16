@@ -4,6 +4,10 @@ import com.minkang.ultimate.pvpmm.model.Arena;
 import com.minkang.ultimate.pvpmm.model.Match;
 import com.minkang.ultimate.pvpmm.util.Elo;
 import org.bukkit.*;
+import org.bukkit.boss.BossBar;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -12,6 +16,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.Scoreboard; import org.bukkit.scoreboard.ScoreboardManager; import org.bukkit.scoreboard.Team;
 import java.util.*;
 public class MatchManager {
+    private final java.util.Map<String, BossBar> countdownBars = new java.util.HashMap<String, BossBar>();
     private java.io.File rankFile;
     private FileConfiguration rankCfg;
 
@@ -83,19 +88,28 @@ public class MatchManager {
         Bukkit.broadcastMessage("§d[경쟁전] §f매치 매칭! §b"+arena.getName()+" §7- §a"+formatTeamWithTier(teamA)+" §7vs §c"+formatTeamWithTier(teamB));
         sendTitleToMatch(m,"§d경쟁전 매치","§7잠시 후 시작합니다",5,30,5);
 
+
 new org.bukkit.scheduler.BukkitRunnable() {
     int n = 3;
     @Override public void run() {
         if (n <= 0) {
+            BossBar bar = getOrCreateCountdownBar(m);
+            bar.setTitle("§a시작!");
+            bar.setColor(BarColor.GREEN);
+            bar.setProgress(1.0);
             sendTitleToMatch(m, "§a시작!", "§7행운을 빕니다", 5, 30, 5);
             sendActionBarToMatch(m, "§a시작!");
-            for(java.util.UUID u : m.getTeamA()){ org.bukkit.entity.Player p=org.bukkit.Bukkit.getPlayer(u); if(p!=null) p.playSound(p.getLocation(), org.bukkit.Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f); }
-            for(java.util.UUID u : m.getTeamB()){ org.bukkit.entity.Player p=org.bukkit.Bukkit.getPlayer(u); if(p!=null) p.playSound(p.getLocation(), org.bukkit.Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f); }
+            for(java.util.UUID u : m.getTeamA()){ org.bukkit.entity.Player p=org.bukkit.Bukkit.getPlayer(u); if(p!=null){ p.playSound(p.getLocation(), org.bukkit.Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f); p.sendMessage("§d[경쟁전] §a시작!"); } }
+            for(java.util.UUID u : m.getTeamB()){ org.bukkit.entity.Player p=org.bukkit.Bukkit.getPlayer(u); if(p!=null){ p.playSound(p.getLocation(), org.bukkit.Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f); p.sendMessage("§d[경쟁전] §a시작!"); } }
             m.setState(com.minkang.ultimate.pvpmm.model.Match.State.RUNNING);
-            new org.bukkit.scheduler.BukkitRunnable(){ @Override public void run(){ m.setState(com.minkang.ultimate.pvpmm.model.Match.State.RUNNING); } }.runTaskLater(plugin, 1L);
+            new org.bukkit.scheduler.BukkitRunnable(){ @Override public void run(){ m.setState(com.minkang.ultimate.pvpmm.model.Match.State.RUNNING); clearCountdownBar(m); } }.runTaskLater(plugin, 1L);
             cancel();
             return;
         }
+        BossBar bar = getOrCreateCountdownBar(m);
+        bar.setTitle("§e" + n);
+        bar.setColor(BarColor.YELLOW);
+        bar.setProgress(n / 3.0);
         sendTitleToMatch(m, "§e" + n, "§7곧 시작", 5, 20, 5);
         sendActionBarToMatch(m, "§e" + n + "§7...");
         for(java.util.UUID u : m.getTeamA()){ org.bukkit.entity.Player p=org.bukkit.Bukkit.getPlayer(u); if(p!=null) p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_HAT, 1.0f, 1.7f); }
@@ -103,6 +117,7 @@ new org.bukkit.scheduler.BukkitRunnable() {
         n--;
     }
 }.runTaskTimer(plugin, 0L, 20L);
+
 
 
         new BukkitRunnable(){ int n=3; @Override public void run(){ if(n==0){ sendTitleToMatch(m,"§aSTART!","",0,20,10); sendTitleToMatch(m,"§a시작!","",0,20,10); m.setState(Match.State.RUNNING); cancel(); return; } sendTitleToMatch(m,"§e"+n,"§7곧 시작",0,20,0); n--; } }.runTaskTimer(plugin,20L,20L);
@@ -192,6 +207,27 @@ private void sendActionBarToMatch(Match m, String msg){
         if(p!=null) p.spigot().sendMessage(net.md_5.bungee.api.ChatMessageType.ACTION_BAR, new net.md_5.bungee.api.chat.TextComponent(msg));
     }
 }
+
+private BossBar getOrCreateCountdownBar(Match m){
+    BossBar bar = countdownBars.get(m.getId());
+    if(bar == null){
+        bar = org.bukkit.Bukkit.createBossBar("§e3", BarColor.YELLOW, BarStyle.SEGMENTED_6);
+        countdownBars.put(m.getId(), bar);
+        for(java.util.UUID u : m.getTeamA()){ org.bukkit.entity.Player p = org.bukkit.Bukkit.getPlayer(u); if(p!=null) bar.addPlayer(p); }
+        for(java.util.UUID u : m.getTeamB()){ org.bukkit.entity.Player p = org.bukkit.Bukkit.getPlayer(u); if(p!=null) bar.addPlayer(p); }
+        bar.setProgress(1.0);
+    }
+    bar.setVisible(true);
+    return bar;
+}
+private void clearCountdownBar(Match m){
+    BossBar bar = countdownBars.remove(m.getId());
+    if(bar != null){
+        bar.removeAll();
+        bar.setVisible(false);
+    }
+}
+
 
     private void toggleFly(java.util.Set<java.util.UUID> team, boolean allow, Match m){ for(java.util.UUID u:team){ Player p=Bukkit.getPlayer(u); if(p==null) continue; if(!allow){ if(p.isFlying()) p.setFlying(false); p.setAllowFlight(false);} else { Boolean had=m.getHadFlight().get(u); if(had!=null) p.setAllowFlight(had); } } }
     
