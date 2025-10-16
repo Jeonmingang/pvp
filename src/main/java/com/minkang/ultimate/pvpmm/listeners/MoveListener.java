@@ -16,7 +16,7 @@ public class MoveListener implements Listener {
         Player p = e.getPlayer();
         Match m = matchManager.getMatch(p.getUniqueId());
         if (m == null) return;
-        if (m.getState() != Match.State.RUNNING) {
+        if (m.getState() == Match.State.PREP) {
             Location from = e.getFrom();
             Location to = e.getTo();
             if (to == null) return;

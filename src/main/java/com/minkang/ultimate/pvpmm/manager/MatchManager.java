@@ -102,7 +102,7 @@ new org.bukkit.scheduler.BukkitRunnable() {
         for(java.util.UUID u : m.getTeamB()){ org.bukkit.entity.Player p=org.bukkit.Bukkit.getPlayer(u); if(p!=null) p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_HAT, 1.0f, 1.7f); }
         n--;
     }
-}.runTaskTimer(plugin, 20L, 20L);
+}.runTaskTimer(plugin, 0L, 20L);
 
 
         new BukkitRunnable(){ int n=3; @Override public void run(){ if(n==0){ sendTitleToMatch(m,"§aSTART!","",0,20,10); sendTitleToMatch(m,"§a시작!","",0,20,10); m.setState(Match.State.RUNNING); cancel(); return; } sendTitleToMatch(m,"§e"+n,"§7곧 시작",0,20,0); n--; } }.runTaskTimer(plugin,20L,20L);
