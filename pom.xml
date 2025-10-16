@@ -5,7 +5,7 @@
 
   <groupId>com.minkang.ultimate</groupId>
   <artifactId>PvPCompetition</artifactId>
-  <version>1.0.19</version>
+  <version>1.0.21</version>
   <packaging>jar</packaging>
 
   <name>PvPCompetition</name>
