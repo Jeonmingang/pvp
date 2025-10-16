@@ -1,6 +1,6 @@
 name: PvPCompetition
 main: com.minkang.ultimate.pvpmm.Main
-version: 1.0.21
+version: 1.0.28
 api-version: 1.16
 author: minkang
 commands:
