@@ -8,6 +8,7 @@ import com.minkang.ultimate.pvpmm.rewards.RewardManager;
 import com.minkang.ultimate.pvpmm.listeners.DamageListener;
 import com.minkang.ultimate.pvpmm.listeners.DeathQuitListener;
 import com.minkang.ultimate.pvpmm.listeners.CommandBlockListener;
+import com.minkang.ultimate.pvpmm.listeners.JoinKickListener;
 import com.minkang.ultimate.pvpmm.service.InviteService;
 import com.minkang.ultimate.pvpmm.service.TeamService;
 import org.bukkit.Bukkit;
@@ -39,6 +40,7 @@ public class Main extends JavaPlugin {
         getCommand("경쟁전").setExecutor(new CompetitionCommand(this, arenaManager, matchmaker, matchManager, teamService, inviteService, rewardManager));
 
         Bukkit.getPluginManager().registerEvents(new DamageListener(matchManager), this);
+        Bukkit.getPluginManager().registerEvents(new JoinKickListener(matchManager), this);
         Bukkit.getPluginManager().registerEvents(new DeathQuitListener(matchManager), this);
         Bukkit.getPluginManager().registerEvents(new CommandBlockListener(matchManager, this), this);
         Bukkit.getPluginManager().registerEvents(new com.minkang.ultimate.pvpmm.listeners.MoveListener(matchManager), this);

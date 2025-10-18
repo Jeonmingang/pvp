@@ -64,6 +64,17 @@ public class MatchManager {
     private final Map<java.util.UUID, Integer> losses = new HashMap<java.util.UUID, Integer>();
     private final Map<String, Match> active = new HashMap<String, Match>();
     private final Map<java.util.UUID, String> playerToMatch = new HashMap<java.util.UUID, String>();
+
+    // --- Pending restore for offline players ---
+    private static class PendingRestore {
+        final org.bukkit.Location loc;
+        final boolean hadFlight;
+        PendingRestore(org.bukkit.Location loc, boolean hadFlight){
+            this.loc = loc; this.hadFlight = hadFlight;
+        }
+    }
+    private final java.util.Map<java.util.UUID, PendingRestore> pendingRestores = new java.util.HashMap<java.util.UUID, PendingRestore>();
+
     public MatchManager(Plugin plugin, com.minkang.ultimate.pvpmm.service.TeamService teamService){ this.plugin=plugin; this.teamService=teamService; }
     public int getRating(java.util.UUID id){ ensureRankConfig();  return rating.computeIfAbsent(id, k -> Main.get().getConfig().getInt("rating.start", 1000)); }
     public void setRating(java.util.UUID id, int val){ rating.put(id, val); }
@@ -191,7 +202,24 @@ new org.bukkit.scheduler.BukkitRunnable() {
     }
     private void restoreAndUnmap(java.util.UUID id, Match m){ playerToMatch.remove(id); restorePlayer(id, m); }
     private void cleanupScoreboard(Match m){ ScoreboardManager man=Bukkit.getScoreboardManager(); if(man==null) return; Scoreboard board=man.getMainScoreboard(); if(m.getScoreboardTeamA()!=null){ Team t=board.getTeam(m.getScoreboardTeamA()); if(t!=null) t.unregister(); } if(m.getScoreboardTeamB()!=null){ Team t=board.getTeam(m.getScoreboardTeamB()); if(t!=null) t.unregister(); } }
-    private void restorePlayer(java.util.UUID id, Match m){ Player p=Bukkit.getPlayer(id); if(p==null) return; org.bukkit.Location back=m.getReturnLocations().get(id); if(back!=null) p.teleport(back); Boolean had=m.getHadFlight().get(id); if(had!=null && Main.get().getConfig().getBoolean("match.restoreFlightAfterMatch", true)) p.setAllowFlight(had); }
+    private void restorePlayer(java.util.UUID id, Match m){
+        org.bukkit.entity.Player p = org.bukkit.Bukkit.getPlayer(id);
+        org.bukkit.Location back = (m!=null ? m.getReturnLocations().get(id) : null);
+        boolean had = (m!=null && m.getHadFlight().getOrDefault(id, false));
+        if(p==null){
+            // player is offline; queue for next login
+            if(back!=null) pendingRestores.put(id, new PendingRestore(back, had));
+            return;
+        }
+        if(back!=null){
+            try{ p.teleport(back); }catch(Throwable ignored){}
+        }
+        try{
+            if(Main.get().getConfig().getBoolean("match.restoreFlightAfterMatch", true)){
+                p.setAllowFlight(had);
+            }
+        }catch(Throwable ignored){}
+    }
     private double averageRating(Set<java.util.UUID> team){ if(team.isEmpty()) return 1000.0; double s=0; for(java.util.UUID u:team) s+=getRating(u); return s/team.size(); }
     private String formatTeam(Set<java.util.UUID> t){ StringBuilder sb=new StringBuilder(); boolean first=true; for(java.util.UUID u:t){ Player p=Bukkit.getPlayer(u); String n=(p==null?"오프라인":p.getName()); if(!first) sb.append(" & "); sb.append(n); first=false; } return sb.toString(); }
     private String formatTeamWithTier(Set<java.util.UUID> t){ StringBuilder sb=new StringBuilder(); boolean first=true; for(java.util.UUID u:t){ Player p=Bukkit.getPlayer(u); String n=(p==null?"오프라인":p.getName()); int r=getRating(u); String tier=getTierName(r); if(!first) sb.append(" & "); sb.append(n).append("§7(").append(tier).append("§7)"); first=false; } return sb.toString(); }
@@ -257,4 +285,21 @@ public void playerDiedOrQuit(java.util.UUID id){
     public java.util.List<java.util.UUID> topRankings(int limit){ java.util.List<java.util.Map.Entry<java.util.UUID,Integer>> list=new java.util.ArrayList<java.util.Map.Entry<java.util.UUID,Integer>>(rating.entrySet()); java.util.Collections.sort(list, new java.util.Comparator<java.util.Map.Entry<java.util.UUID,Integer>>(){ public int compare(java.util.Map.Entry<java.util.UUID,Integer>a, java.util.Map.Entry<java.util.UUID,Integer>b){ return Integer.compare(b.getValue(), a.getValue()); }}); java.util.List<java.util.UUID> out=new java.util.ArrayList<java.util.UUID>(); int i=0; for(java.util.Map.Entry<java.util.UUID,Integer> e: list){ out.add(e.getKey()); if(++i>=limit) break; } return out; }
     private void forceUnmapAll(Match m){ java.util.Set<java.util.UUID> all=new java.util.HashSet<java.util.UUID>(); all.addAll(m.getTeamA()); all.addAll(m.getTeamB()); for(java.util.UUID u: all) playerToMatch.remove(u); }
     private void clearTeams(Match m){ java.util.Set<java.util.UUID> all=new java.util.HashSet<java.util.UUID>(); all.addAll(m.getTeamA()); all.addAll(m.getTeamB()); for(java.util.UUID u: all) teamService.clearWholeTeam(u); }
+
+    public void applyPendingRestore(org.bukkit.entity.Player p){
+        if(p==null) return;
+        PendingRestore pr = pendingRestores.remove(p.getUniqueId());
+        if(pr!=null){
+            try{
+                p.teleport(pr.loc);
+            }catch(Throwable ignored){}
+            try{
+                boolean allow = pr.hadFlight;
+                if (Main.get().getConfig().getBoolean("match.restoreFlightAfterMatch", true)) {
+                    p.setAllowFlight(allow);
+                }
+            }catch(Throwable ignored){}
+        }
+    }
+
 }
