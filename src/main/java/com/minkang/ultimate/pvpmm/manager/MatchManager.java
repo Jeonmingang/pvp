@@ -135,17 +135,23 @@ new org.bukkit.scheduler.BukkitRunnable() {
     }
     private void snapshotPlayer(java.util.UUID id, Match m){ Player p=Bukkit.getPlayer(id); if(p==null) return; m.getReturnLocations().put(id, p.getLocation().clone()); m.getHadFlight().put(id, p.getAllowFlight()); }
     private void teleportTeam(Set<java.util.UUID> team, Location p1, Location p2){ int i=0; for(java.util.UUID u: team){ Player p=Bukkit.getPlayer(u); if(p!=null) p.teleport((i++==0)?p1:p2); } }
-    private void setupScoreboardTeams(Match m){
+    
+private void setupScoreboardTeams(Match m){
         if(!Main.get().getConfig().getBoolean("match.disableFriendlyFire", true)) return;
-        ScoreboardManager man=Bukkit.getScoreboardManager(); if(man==null) return; Scoreboard board=man.getMainScoreboard();
-        String ta="pvpA_"+m.getId(), tb="pvpB_"+m.getId();
-        Team t1=board.getTeam(ta); if(t1==null) t1=board.registerNewTeam(ta);
-        Team t2=board.getTeam(tb); if(t2==null) t2=board.registerNewTeam(tb);
-        t1.setAllowFriendlyFire(false); t2.setAllowFriendlyFire(false);
-        m.setScoreboardTeamA(ta); m.setScoreboardTeamB(tb);
-        for(java.util.UUID u:m.getTeamA()){ Player p=Bukkit.getPlayer(u); if(p!=null) t1.addEntry(p.getName()); }
-        for(java.util.UUID u:m.getTeamB()){ Player p=Bukkit.getPlayer(u); if(p!=null) t2.addEntry(p.getName()); }
+        ScoreboardManager man = Bukkit.getScoreboardManager(); if(man==null) return; 
+        Scoreboard board = man.getMainScoreboard();
+        String ta = makeTeamName("A_", m.getId());
+        String tb = makeTeamName("B_", m.getId());
+        Team t1 = board.getTeam(ta); if(t1==null) t1 = board.registerNewTeam(ta);
+        Team t2 = board.getTeam(tb); if(t2==null) t2 = board.registerNewTeam(tb);
+        t1.setAllowFriendlyFire(false); 
+        t2.setAllowFriendlyFire(false);
+        m.setScoreboardTeamA(ta); 
+        m.setScoreboardTeamB(tb);
+        for(java.util.UUID u : m.getTeamA()){ Player p=Bukkit.getPlayer(u); if(p!=null) t1.addEntry(p.getName()); }
+        for(java.util.UUID u : m.getTeamB()){ Player p=Bukkit.getPlayer(u); if(p!=null) t2.addEntry(p.getName()); }
     }
+
     public void endMatch(Match m, boolean teamAWon){
         if(m.getState()==Match.State.ENDED) return;
         m.setState(Match.State.ENDED);
@@ -300,6 +306,28 @@ public void playerDiedOrQuit(java.util.UUID id){
                 }
             }catch(Throwable ignored){}
         }
+    }
+
+
+    // Generate a scoreboard team name within 16 chars, unique in the main scoreboard.
+    private String makeTeamName(String prefix, String matchId){
+        org.bukkit.scoreboard.ScoreboardManager man = org.bukkit.Bukkit.getScoreboardManager();
+        if(man == null) return prefix; // failsafe
+        org.bukkit.scoreboard.Scoreboard board = man.getMainScoreboard();
+        String base = Integer.toString(Math.abs(matchId.hashCode()), 36); // compact & deterministic
+        String name = prefix + base;
+        if(name.length() > 16) name = name.substring(0, 16);
+        // ensure uniqueness if somehow collides
+        String out = name;
+        int i = 0;
+        while(board.getTeam(out) != null && i < 36){
+            String sfx = Integer.toString(i, 36);
+            int cut = 16 - sfx.length();
+            if(cut < 1) cut = 1;
+            out = (name.length() > cut ? name.substring(0, cut) : name) + sfx;
+            i++;
+        }
+        return out;
     }
 
 }
